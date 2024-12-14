@@ -19,6 +19,7 @@ int main(void)
 
     int ret = uv_run(&loop, UV_RUN_DEFAULT);
     uv_loop_close(&loop);
+
     // free manually allocated variables
     free(proxy_server);
     return ret;
