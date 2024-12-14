@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #define SOCKS5_VERSION 0x05
+#define SOCKS5_SUBNEGOTIATION_VERSION 0x01
 
 typedef enum {
     SOCKS5_AUTH_NO_AUTHENTICATION_REQUIRED = 0x00,
@@ -39,5 +40,8 @@ typedef enum {
 
 int socks5_parse_identifier(uint8_t *buf, const size_t buf_len,
                             uint8_t **methods_out, uint8_t **nmethods_out);
+
+int socks5_parse_auth(uint8_t *buf, const size_t buf_len, uint8_t **ulen_out,
+                      char **uname_out, uint8_t **plen_out, char **passwd_out);
 
 #endif

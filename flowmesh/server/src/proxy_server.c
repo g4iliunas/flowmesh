@@ -57,6 +57,18 @@ static void write2(uv_stream_t *stream, char *data, int len)
 }
 
 /*
+ * Return code 0 means success
+ */
+static int proxy_auth_cb(const char *uname, uint8_t ulen, const char *passwd,
+                         uint8_t plen)
+{
+#ifndef NDEBUG
+    log_debug("Username: %.*s; password: %.*s", ulen, uname, plen, passwd);
+#endif
+    return 0;
+}
+
+/*
  * Return code 1 means the client must be disconnected
  */
 static int socks5_handle(uv_stream_t *client, const ssize_t *nread,
@@ -102,15 +114,47 @@ static int socks5_handle(uv_stream_t *client, const ssize_t *nread,
 #endif
             resp[1] = SOCKS5_AUTH_NO_ACCEPTABLE_METHODS;
             client_ctx->disconnect = true;
-            write2((uv_stream_t *)client, (char *)resp, sizeof(resp));
         }
         else {
             resp[1] = SOCKS5_AUTH_USERNAME_PASSWORD;
-            write2((uv_stream_t *)client, (char *)resp, sizeof(resp));
             client_ctx->state = FM_SOCKS5_STATE_IDENTIFIER;
         }
+
+        write2((uv_stream_t *)client, (char *)resp, sizeof(resp));
+        break;
     }
     case FM_SOCKS5_STATE_IDENTIFIER: {
+        uint8_t *ulen = NULL;
+        char *uname = NULL;
+        uint8_t *plen = NULL;
+        char *passwd = NULL;
+
+        if (socks5_parse_auth((uint8_t *)buf->base, *nread, &ulen, &uname,
+                              &plen, &passwd) != 0) {
+#ifndef NDEBUG
+            log_debug("Failed to parse SOCKS5 authentication packet");
+#endif
+            return 1;
+        }
+
+        int auth_ret = proxy_auth_cb(uname, *ulen, passwd, *plen);
+
+        char resp[2];
+        resp[0] = SOCKS5_SUBNEGOTIATION_VERSION;
+
+        if (auth_ret != 0) {
+            resp[1] = 0x01;
+            client_ctx->disconnect = true;
+        }
+        else {
+            resp[1] = 0x00;
+            client_ctx->state = FM_SOCKS5_STATE_AUTHENTICATION;
+        }
+
+        write2((uv_stream_t *)client, (char *)resp, sizeof(resp));
+        break;
+    }
+    case FM_SOCKS5_STATE_AUTHENTICATION: {
         break;
     }
     }
