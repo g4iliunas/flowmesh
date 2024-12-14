@@ -1,5 +1,5 @@
 # FlowMesh 
-FlowMesh is a forwarding proxy service which consists of consumers and sharers.
+FlowMesh is a forwarding proxy service which consists of consumers and providers.
 # Building
 ## Dependencies
 - [libuv](https://github.com/libuv/libuv)
