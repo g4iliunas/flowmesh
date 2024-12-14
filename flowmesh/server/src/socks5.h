@@ -7,26 +7,26 @@
 #define SOCKS5_VERSION 0x05
 #define SOCKS5_SUBNEGOTIATION_VERSION 0x01
 
-typedef enum {
+typedef enum : uint8_t {
     SOCKS5_AUTH_NO_AUTHENTICATION_REQUIRED = 0x00,
     SOCKS5_AUTH_GSSAPI = 0x01,
     SOCKS5_AUTH_USERNAME_PASSWORD = 0x02,
     SOCKS5_AUTH_NO_ACCEPTABLE_METHODS = 0xFF
 } socks5_auth_method_t;
 
-typedef enum {
+typedef enum : uint8_t {
     SOCKS5_CMD_CONNECT = 0x01,
     SOCKS5_CMD_BIND = 0x02,
     SOCKS5_CMD_UDP_ASSOCIATE = 0x03
 } socks5_command_t;
 
-typedef enum {
+typedef enum : uint8_t {
     SOCKS5_ADDR_TYPE_IPV4 = 0x01,
     SOCKS5_ADDR_TYPE_DOMAIN = 0x03,
     SOCKS5_ADDR_TYPE_IPV6 = 0x04
 } socks5_address_type_t;
 
-typedef enum {
+typedef enum : uint8_t {
     SOCKS5_REPLY_SUCCEEDED = 0x00,
     SOCKS5_REPLY_GENERAL_FAILURE = 0x01,
     SOCKS5_REPLY_NOT_ALLOWED = 0x02,
@@ -43,5 +43,13 @@ int socks5_parse_identifier(uint8_t *buf, const size_t buf_len,
 
 int socks5_parse_auth(uint8_t *buf, const size_t buf_len, uint8_t **ulen_out,
                       char **uname_out, uint8_t **plen_out, char **passwd_out);
+
+/*
+ * If `addr_type_out` is a domain type, `addr_out[0]` will contain domain length
+ * with following bytes being the domain string.
+ */
+int socks5_parse_request(uint8_t *buf, const size_t buf_len,
+                         socks5_address_type_t **addr_type_out,
+                         uint8_t **addr_out, uint16_t **netport_out);
 
 #endif

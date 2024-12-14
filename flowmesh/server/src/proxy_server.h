@@ -9,6 +9,7 @@ typedef enum {
     FM_SOCKS5_STATE_NONE,
     FM_SOCKS5_STATE_IDENTIFIER,
     FM_SOCKS5_STATE_AUTHENTICATION,
+    FM_SOCKS5_STATE_AUTHORIZED,
 } fm_socks5_state_t;
 
 typedef struct {

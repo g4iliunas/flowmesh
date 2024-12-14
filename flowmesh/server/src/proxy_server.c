@@ -80,8 +80,8 @@ static int socks5_handle(uv_stream_t *client, const ssize_t *nread,
 #endif
     switch (client_ctx->state) {
     case FM_SOCKS5_STATE_NONE: {
-        uint8_t *methods = NULL;
-        uint8_t *nmethods = NULL;
+        uint8_t *methods;
+        uint8_t *nmethods;
 
         if (socks5_parse_identifier((uint8_t *)buf->base, *nread, &methods,
                                     &nmethods) != 0) {
@@ -124,10 +124,10 @@ static int socks5_handle(uv_stream_t *client, const ssize_t *nread,
         break;
     }
     case FM_SOCKS5_STATE_IDENTIFIER: {
-        uint8_t *ulen = NULL;
-        char *uname = NULL;
-        uint8_t *plen = NULL;
-        char *passwd = NULL;
+        uint8_t *ulen;
+        char *uname;
+        uint8_t *plen;
+        char *passwd;
 
         if (socks5_parse_auth((uint8_t *)buf->base, *nread, &ulen, &uname,
                               &plen, &passwd) != 0) {
@@ -136,7 +136,6 @@ static int socks5_handle(uv_stream_t *client, const ssize_t *nread,
 #endif
             return 1;
         }
-
         int auth_ret = proxy_auth_cb(uname, *ulen, passwd, *plen);
 
         char resp[2];
@@ -155,6 +154,38 @@ static int socks5_handle(uv_stream_t *client, const ssize_t *nread,
         break;
     }
     case FM_SOCKS5_STATE_AUTHENTICATION: {
+        socks5_address_type_t *addr_type;
+        uint8_t *addr;
+        uint16_t *netport;
+
+        if (socks5_parse_request((uint8_t *)buf->base, *nread, &addr_type,
+                                 &addr, &netport) != 0) {
+#ifndef NDEBUG
+            log_debug("Failed to parse SOCKS5 request packet");
+#endif
+            return 1;
+        }
+#ifndef NDEBUG
+        log_debug("SOCKS5 request:");
+
+        char ipstr[INET6_ADDRSTRLEN];
+        if (*addr_type == SOCKS5_ADDR_TYPE_IPV4) {
+            inet_ntop(AF_INET, addr, ipstr, sizeof(ipstr));
+            log_debug("*** IP: %s", ipstr);
+        }
+        else if (*addr_type == SOCKS5_ADDR_TYPE_IPV6) {
+            inet_ntop(AF_INET6, addr, ipstr, sizeof(ipstr));
+            log_debug("*** IP: %s", ipstr);
+        }
+        else {
+            log_debug("*** Domain: %.*s", addr[0], &addr[1]);
+        }
+
+        log_debug("*** Port: %u", ntohs(*netport));
+#endif
+        // TODO: impl socks5 request response
+
+        client_ctx->state = FM_SOCKS5_STATE_AUTHORIZED;
         break;
     }
     }
