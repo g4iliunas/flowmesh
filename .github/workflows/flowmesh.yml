@@ -19,12 +19,14 @@ jobs:
           mkdir build && cd build
           cmake -DCMAKE_BUILD_TYPE=Release ..
           make -j4 
+          make clean
 
       - name: Build FlowMesh server (Debug)
         run: |
           cd ${{ github.workspace }}/flowmesh/server/build
           cmake -DCMAKE_BUILD_TYPE=Debug ..
           make -j4 
+          make clean
       
       - name: Build FlowMesh client (Release)
         run: |
@@ -32,9 +34,11 @@ jobs:
           mkdir build && cd build
           cmake -DCMAKE_BUILD_TYPE=Release ..
           make -j4 
+          make clean
 
       - name: Build FlowMesh client (Debug)
         run: |
           cd ${{ github.workspace }}/flowmesh/client/build
           cmake -DCMAKE_BUILD_TYPE=Debug ..
           make -j4 
+          make clean
