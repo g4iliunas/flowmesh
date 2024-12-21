@@ -1,6 +1,7 @@
 #ifndef PROXY_SERVER_H
 #define PROXY_SERVER_H
 
+#include "socks5.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <uv.h>
@@ -24,5 +25,13 @@ typedef struct {
  */
 uv_tcp_t *fm_proxy_server_init(uv_loop_t *loop, const char *address,
                                const uint16_t port);
+
+void fm_proxy_auth_ack(uv_stream_t *client, bool ok);
+
+/*
+ * Type must not be domain
+ */
+void fm_proxy_request_ack(uv_stream_t *client, socks5_address_type_t type,
+                          bool ok);
 
 #endif // PROXY_SERVER_H

@@ -1,5 +1,6 @@
 #include "proxy_server.h"
 #include "log.h"
+#include "proxy_callbacks.h"
 #include "socks5.h"
 #include <stdlib.h>
 #include <string.h>
@@ -56,24 +57,6 @@ static void write2(uv_stream_t *stream, char *data, int len)
     uv_buf_t buffer[] = {{.base = data, .len = len}};
     uv_write_t *req = malloc(sizeof(uv_write_t));
     uv_write(req, stream, buffer, 1, on_write);
-}
-
-/*
- * Return code 0 means success
- */
-static int proxy_auth_cb(const char *uname, uint8_t ulen, const char *passwd,
-                         uint8_t plen)
-{
-#ifndef NDEBUG
-    log_debug("Username: %.*s; password: %.*s", ulen, uname, plen, passwd);
-#else
-    (void)uname;
-    (void)ulen;
-    (void)passwd;
-    (void)plen;
-#endif
-
-    return 0;
 }
 
 /*
@@ -144,21 +127,8 @@ static int socks5_handle(uv_stream_t *client, const ssize_t *nread,
 #endif
             return 1;
         }
-        int auth_ret = proxy_auth_cb(uname, *ulen, passwd, *plen);
 
-        char resp[2];
-        resp[0] = SOCKS5_SUBNEGOTIATION_VERSION;
-
-        if (auth_ret != 0) {
-            resp[1] = 0x01;
-            client_ctx->disconnect = true;
-        }
-        else {
-            resp[1] = 0x00;
-            client_ctx->state = FM_SOCKS5_STATE_AUTHENTICATION;
-        }
-
-        write2((uv_stream_t *)client, (char *)resp, sizeof(resp));
+        cb_proxy_auth(client, uname, *ulen, passwd, *plen);
         break;
     }
     case FM_SOCKS5_STATE_AUTHENTICATION: {
@@ -173,27 +143,15 @@ static int socks5_handle(uv_stream_t *client, const ssize_t *nread,
 #endif
             return 1;
         }
+
+        cb_conn_request(client, addr_type, addr, netport);
+        break;
+    }
+    case FM_SOCKS5_STATE_AUTHORIZED: {
 #ifndef NDEBUG
-        log_debug("SOCKS5 request:");
-
-        char ipstr[INET6_ADDRSTRLEN];
-        if (*addr_type == SOCKS5_ADDR_TYPE_IPV4) {
-            inet_ntop(AF_INET, addr, ipstr, sizeof(ipstr));
-            log_debug("*** IP: %s", ipstr);
-        }
-        else if (*addr_type == SOCKS5_ADDR_TYPE_IPV6) {
-            inet_ntop(AF_INET6, addr, ipstr, sizeof(ipstr));
-            log_debug("*** IP: %s", ipstr);
-        }
-        else {
-            log_debug("*** Domain: %.*s", addr[0], &addr[1]);
-        }
-
-        log_debug("*** Port: %u", ntohs(*netport));
+        log_debug("Got data to relay");
 #endif
-        // TODO: impl socks5 request response
-
-        client_ctx->state = FM_SOCKS5_STATE_AUTHORIZED;
+        // TODO: add callback for relay?
         break;
     }
     }
@@ -275,6 +233,8 @@ static void on_new_connection(uv_stream_t *server, int status)
     }
 }
 
+/* Public functions */
+
 uv_tcp_t *fm_proxy_server_init(uv_loop_t *loop, const char *address,
                                const uint16_t port)
 {
@@ -294,4 +254,55 @@ uv_tcp_t *fm_proxy_server_init(uv_loop_t *loop, const char *address,
     }
 
     return proxy_server;
+}
+
+void fm_proxy_auth_ack(uv_stream_t *client, bool ok)
+{
+    fm_proxy_client_t *client_ctx = (fm_proxy_client_t *)client->data;
+    char resp[2];
+    resp[0] = SOCKS5_SUBNEGOTIATION_VERSION;
+
+    if (!ok) {
+        resp[1] = 0x01;
+        client_ctx->disconnect = true;
+    }
+    else {
+        resp[1] = 0x00;
+        client_ctx->state = FM_SOCKS5_STATE_AUTHENTICATION;
+    }
+
+    write2((uv_stream_t *)client, (char *)resp, sizeof(resp));
+}
+
+void fm_proxy_request_ack(uv_stream_t *client, socks5_address_type_t type,
+                          bool ok)
+{
+    if (type == SOCKS5_ADDR_TYPE_DOMAIN)
+        return;
+
+    fm_proxy_client_t *client_ctx = (fm_proxy_client_t *)client->data;
+    char resp[22];
+
+    resp[0] = SOCKS5_VERSION;
+    resp[2] = 0x00;
+
+    if (!ok) {
+        resp[1] = 0x01;
+        client_ctx->disconnect = true;
+        write2(client, resp, 3);
+        return;
+    }
+
+    resp[1] = 0x00;
+    resp[3] = type;
+    client_ctx->state = FM_SOCKS5_STATE_AUTHORIZED;
+
+    if (type == SOCKS5_ADDR_TYPE_IPV4) {
+        memset(&resp[4], 0, 6); // nullify ip and port
+        write2(client, resp, 10);
+    }
+    else if (type == SOCKS5_ADDR_TYPE_IPV6) {
+        memset(&resp[4], 0, 18); // nullify ip and port
+        write2(client, resp, 22);
+    }
 }
