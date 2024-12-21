@@ -10,6 +10,8 @@
 static void alloc_buffer(uv_handle_t *handle, size_t suggested_size,
                          uv_buf_t *buf)
 {
+    (void)handle;
+
     buf->base = (char *)malloc(suggested_size);
     buf->len = suggested_size;
 #ifndef NDEBUG

@@ -8,7 +8,7 @@ int socks5_parse_identifier(uint8_t *buf, const size_t buf_len,
 
     uint8_t *ver = &buf[0];
     uint8_t *nmethods = &buf[1];
-    if (*ver != SOCKS5_VERSION || buf_len != *nmethods + 2)
+    if (*ver != SOCKS5_VERSION || buf_len != (size_t)(*nmethods + 2))
         return 1;
 
     uint8_t *methods = &buf[2];
@@ -26,13 +26,14 @@ int socks5_parse_auth(uint8_t *buf, const size_t buf_len, uint8_t **ulen_out,
     uint8_t *ver = &buf[0];
     uint8_t *ulen = &buf[1];
     if (*ver != SOCKS5_SUBNEGOTIATION_VERSION || *ulen == 0 ||
-        buf_len < *ulen + 3) // including ver, uname, plen byte fields
+        buf_len < (size_t)(*ulen + 3)) // including ver, uname, plen byte fields
         return 1;
 
     char *uname = (char *)&buf[2];
     uint8_t *plen = (uint8_t *)&uname[*ulen];
     if (*plen == 0 ||
-        buf_len != *ulen + *plen + 3) // including ver, uname, plen byte fields
+        buf_len != (size_t)(*ulen + *plen +
+                            3)) // including ver, uname, plen byte fields
         return 1;
 
     char *passwd = (char *)&plen[1];
@@ -60,46 +61,46 @@ int socks5_parse_request(uint8_t *buf, const size_t buf_len,
         return 1;
 
     switch (*atyp) {
-        case SOCKS5_ADDR_TYPE_IPV4: {
-            if (buf_len != 10)
-                return 1;
-            
-            uint8_t *ipv4 = &buf[4];
-            uint16_t *netport = (uint16_t *)&ipv4[4];
-
-            *addr_out = ipv4;
-            *netport_out = netport;
-            break;
-        }
-        case SOCKS5_ADDR_TYPE_DOMAIN: {
-            if (buf_len < 5)
-                return 1;
-
-            uint8_t *domainlen = &buf[4];
-            if (*domainlen == 0 || buf_len != *domainlen + 7)
-                return 1;
-
-            uint8_t *domain = &domainlen[1];
-            uint16_t *netport = (uint16_t *)&domain[*domainlen];
-
-            *addr_out = domainlen;
-            *netport_out = netport;
-            break;
-        }
-        case SOCKS5_ADDR_TYPE_IPV6: {
-            if (buf_len != 22)
-                return 1;
-
-            uint8_t *ipv6 = &buf[4];
-            uint16_t *netport = (uint16_t *)&ipv6[16];
-
-            *addr_out = ipv6;
-            *netport_out = netport;
-            break;
-        }
-        default: {
+    case SOCKS5_ADDR_TYPE_IPV4: {
+        if (buf_len != 10)
             return 1;
-        }
+
+        uint8_t *ipv4 = &buf[4];
+        uint16_t *netport = (uint16_t *)&ipv4[4];
+
+        *addr_out = ipv4;
+        *netport_out = netport;
+        break;
+    }
+    case SOCKS5_ADDR_TYPE_DOMAIN: {
+        if (buf_len < 5)
+            return 1;
+
+        uint8_t *domainlen = &buf[4];
+        if (*domainlen == 0 || buf_len != (size_t)(*domainlen + 7))
+            return 1;
+
+        uint8_t *domain = &domainlen[1];
+        uint16_t *netport = (uint16_t *)&domain[*domainlen];
+
+        *addr_out = domainlen;
+        *netport_out = netport;
+        break;
+    }
+    case SOCKS5_ADDR_TYPE_IPV6: {
+        if (buf_len != 22)
+            return 1;
+
+        uint8_t *ipv6 = &buf[4];
+        uint16_t *netport = (uint16_t *)&ipv6[16];
+
+        *addr_out = ipv6;
+        *netport_out = netport;
+        break;
+    }
+    default: {
+        return 1;
+    }
     }
 
     *addr_type_out = atyp;
