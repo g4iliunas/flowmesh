@@ -15,7 +15,7 @@ static void alloc_buffer(uv_handle_t *handle, size_t suggested_size,
     buf->base = (char *)malloc(suggested_size);
     buf->len = suggested_size;
 #ifndef NDEBUG
-    log_debug("Allocated a buffer %p of len %u", buf->base, buf->len);
+    log_trace("Allocated a buffer %p of len %u", buf->base, buf->len);
 #endif
 }
 
@@ -36,8 +36,8 @@ static void on_write(uv_write_t *req, int status)
         uv_close((uv_handle_t *)req->handle, client_free);
     }
     else {
-#ifndef DEBUG
-        log_debug("Wrote data to client");
+#ifndef NDEBUG
+        log_debug("Written data (%u bufs) to client", req->nbufs);
 #endif
         fm_proxy_client_t *client_ctx = (fm_proxy_client_t *)req->handle->data;
         if (client_ctx->disconnect) {
