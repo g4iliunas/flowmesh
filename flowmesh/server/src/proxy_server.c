@@ -66,7 +66,13 @@ static int proxy_auth_cb(const char *uname, uint8_t ulen, const char *passwd,
 {
 #ifndef NDEBUG
     log_debug("Username: %.*s; password: %.*s", ulen, uname, plen, passwd);
+#else
+    (void)uname;
+    (void)ulen;
+    (void)passwd;
+    (void)plen;
 #endif
+
     return 0;
 }
 
