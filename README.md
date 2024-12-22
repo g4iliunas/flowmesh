@@ -1,5 +1,12 @@
-# FlowMesh
-FlowMesh is a high-performance forwarding proxy service written in C99. It leverages the [libuv](https://github.com/libuv/libuv) library for asynchronous I/O operations.
+<p align="center">
+    <img src="logo.jpeg" width="75%">
+</p>
+
+<p align="center">
+    FlowMesh is a high-performance forwarding proxy service written in C99. It leverages the <a href="https://github.com/libuv/libuv">libuv</a> library for asynchronous I/O operations.
+</p>
+
+---
 
 ## Features
 - SOCKS5 proxy support
@@ -50,7 +57,7 @@ To run the FlowMesh server, execute the following command from the `server/build
 ./flowmesh_server
 ```
 
-The server initializes both a proxy server and a provider management server. It listens for incoming connections on specified IP addresses and ports, forwarding data between proxy clients (sharers) and providers on a separate network.
+The server initializes both a proxy server and a provider management server. It listens for incoming connections on specified IP addresses and ports, forwarding data between proxy clients (consumers) and providers on a separate network.
 
 
 ### Running the Client
