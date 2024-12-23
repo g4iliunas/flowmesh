@@ -40,8 +40,8 @@ static void on_write(uv_write_t *req, int status)
 #ifndef NDEBUG
         log_debug("Written data (%u bufs) to client", req->nbufs);
 #endif
-        fm_proxy_client_t *client_ctx = (fm_proxy_client_t *)req->handle->data;
-        if (client_ctx->disconnect) {
+        fm_proxy_client_t *ctx = (fm_proxy_client_t *)req->handle->data;
+        if (ctx->disconnect) {
 #ifndef NDEBUG
             log_debug(
                 "Disconnect indicator was set to true, closing the client");
@@ -65,11 +65,11 @@ static void write2(uv_stream_t *stream, char *data, int len)
 static int socks5_handle(uv_stream_t *client, const ssize_t *nread,
                          const uv_buf_t *buf)
 {
-    fm_proxy_client_t *client_ctx = (fm_proxy_client_t *)client->data;
+    fm_proxy_client_t *ctx = (fm_proxy_client_t *)client->data;
 #ifndef NDEBUG
-    log_debug("Client state: %d", client_ctx->state);
+    log_debug("Client state: %d", ctx->state);
 #endif
-    switch (client_ctx->state) {
+    switch (ctx->state) {
     case FM_SOCKS5_STATE_NONE: {
         uint8_t *methods;
         uint8_t *nmethods;
@@ -104,11 +104,11 @@ static int socks5_handle(uv_stream_t *client, const ssize_t *nread,
                       "abandoning client");
 #endif
             resp[1] = SOCKS5_AUTH_NO_ACCEPTABLE_METHODS;
-            client_ctx->disconnect = true;
+            ctx->disconnect = true;
         }
         else {
             resp[1] = SOCKS5_AUTH_USERNAME_PASSWORD;
-            client_ctx->state = FM_SOCKS5_STATE_IDENTIFIER;
+            ctx->state = FM_SOCKS5_STATE_IDENTIFIER;
         }
 
         write2((uv_stream_t *)client, (char *)resp, sizeof(resp));
@@ -208,21 +208,21 @@ static void on_new_connection(uv_stream_t *server, int status)
     uv_tcp_init(server->loop, client);
 
     if (uv_accept(server, (uv_stream_t *)client) == 0) {
-        fm_proxy_client_t *proxy_ctx =
+        fm_proxy_client_t *ctx =
             (fm_proxy_client_t *)malloc(sizeof(fm_proxy_client_t));
 
-        if (!proxy_ctx) {
+        if (!ctx) {
             uv_close((uv_handle_t *)client, client_free);
             log_error("Failed to allocate a proxy client context");
             return;
         }
 
         // initialize ctx
-        proxy_ctx->state = 0;
-        proxy_ctx->disconnect = false;
+        ctx->state = 0;
+        ctx->disconnect = false;
 
         // assign uv handle to carry the ctx
-        client->data = (void *)proxy_ctx;
+        client->data = (void *)ctx;
 
         // start the read/write cycle
         uv_read_start((uv_stream_t *)client, alloc_buffer, read_cb);
@@ -258,17 +258,17 @@ uv_tcp_t *fm_proxy_server_init(uv_loop_t *loop, const char *address,
 
 void fm_proxy_auth_ack(uv_stream_t *client, bool ok)
 {
-    fm_proxy_client_t *client_ctx = (fm_proxy_client_t *)client->data;
+    fm_proxy_client_t *ctx = (fm_proxy_client_t *)client->data;
     char resp[2];
     resp[0] = SOCKS5_SUBNEGOTIATION_VERSION;
 
     if (!ok) {
         resp[1] = 0x01;
-        client_ctx->disconnect = true;
+        ctx->disconnect = true;
     }
     else {
         resp[1] = 0x00;
-        client_ctx->state = FM_SOCKS5_STATE_AUTHENTICATION;
+        ctx->state = FM_SOCKS5_STATE_AUTHENTICATION;
     }
 
     write2((uv_stream_t *)client, (char *)resp, sizeof(resp));
@@ -280,7 +280,7 @@ void fm_proxy_request_ack(uv_stream_t *client, socks5_address_type_t type,
     if (type == SOCKS5_ADDR_TYPE_DOMAIN)
         return;
 
-    fm_proxy_client_t *client_ctx = (fm_proxy_client_t *)client->data;
+    fm_proxy_client_t *ctx = (fm_proxy_client_t *)client->data;
     char resp[22];
 
     resp[0] = SOCKS5_VERSION;
@@ -288,14 +288,14 @@ void fm_proxy_request_ack(uv_stream_t *client, socks5_address_type_t type,
 
     if (!ok) {
         resp[1] = 0x01;
-        client_ctx->disconnect = true;
+        ctx->disconnect = true;
         write2(client, resp, 3);
         return;
     }
 
     resp[1] = 0x00;
     resp[3] = type;
-    client_ctx->state = FM_SOCKS5_STATE_AUTHORIZED;
+    ctx->state = FM_SOCKS5_STATE_AUTHORIZED;
 
     if (type == SOCKS5_ADDR_TYPE_IPV4) {
         memset(&resp[4], 0, 6); // nullify ip and port
