@@ -1,0 +1,1 @@
+The client will require a token in order to connect to the server and act as a provider node. Token will get generated when a new entry in the database is added.
