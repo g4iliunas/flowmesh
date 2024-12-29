@@ -1,0 +1,46 @@
+name: FlowMesh 
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build-flowmesh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libuv1 libuv1-dev cmake libspdlog-dev
+
+      - name: Build FlowMesh server (Release)
+        run: |
+          cd ${{ github.workspace }}/flowmesh/server
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          make -j4 
+          rm -rf ../build
+
+      - name: Build FlowMesh server (Debug)
+        run: |
+          cd ${{ github.workspace }}/flowmesh/server
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Debug ..
+          make -j4 
+          rm -rf ../build
+      
+      - name: Build FlowMesh client (Release)
+        run: |
+          cd ${{ github.workspace }}/flowmesh/client
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          make -j4 
+          rm -rf ../build
+
+      - name: Build FlowMesh client (Debug)
+        run: |
+          cd ${{ github.workspace }}/flowmesh/client
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Debug ..
+          make -j4 
+          rm -rf ../build

@@ -1,0 +1,26 @@
+cmake_minimum_required(VERSION 3.10)
+set(CMAKE_CXX_STANDARD 17)
+project(flowmesh_server)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBUV REQUIRED IMPORTED_TARGET libuv)
+find_package(spdlog REQUIRED)
+
+add_executable(flowmesh_server main.cpp
+    src/proxy_server.cpp
+    src/manager_server.cpp
+    src/client.cpp
+    src/proxy_client.cpp
+    src/utils.cpp
+    src/socks5.cpp
+    src/callbacks.cpp
+)
+
+target_include_directories(flowmesh_server PRIVATE ${LIBUV_INCLUDE_DIRS})
+target_compile_options(flowmesh_server PRIVATE -Wall -Wextra -Wpedantic)
+target_link_libraries(flowmesh_server PRIVATE PkgConfig::LIBUV spdlog::spdlog) 
+
+if (DEFINED TRACE)
+    message("TRACE is enabled")
+    target_compile_definitions(flowmesh_server PUBLIC SPDLOG_ACTIVE_LEVEL=0)
+endif()
