@@ -1,8 +1,9 @@
 #ifndef MANAGER_SERVER_H
 #define MANAGER_SERVER_H
 
-#include <uv.h>
+#include <cstdint>
 #include <string_view>
+#include <uv.h>
 
 class ManagerServer {
   public:
