@@ -11,7 +11,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libuv1 libuv1-dev cmake libspdlog-dev
+          sudo apt-get install -y libuv1 libuv1-dev cmake libspdlog-dev g++
 
       - name: Build FlowMesh server (Release)
         run: |

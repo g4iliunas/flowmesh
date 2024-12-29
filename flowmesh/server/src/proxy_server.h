@@ -1,6 +1,7 @@
 #ifndef PROXY_SERVER_H
 #define PROXY_SERVER_H
 
+#include <cstdint>
 #include <string_view>
 #include <uv.h>
 
