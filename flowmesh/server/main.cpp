@@ -1,12 +1,6 @@
 #include "src/manager_server.h"
 #include "src/proxy_server.h"
-
-#if !defined(NDEBUG) &&                                                        \
-    !defined(SPDLOG_ACTIVE_LEVEL) // in case TRACE wasn't set
-#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
-#endif
 #include <spdlog/spdlog.h>
-
 #include <uv.h>
 
 int main(void)
