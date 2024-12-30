@@ -28,7 +28,9 @@ void ProxyClient::read_start()
                     SPDLOG_DEBUG("Client disconnected");
 
                 delete pclient;
-                delete[] buf->base;
+
+                if (buf->base != nullptr)
+                    delete[] buf->base;
                 return;
             }
 
@@ -96,29 +98,25 @@ void ProxyClient::handle_stage_ident(const std::string_view &buf)
 
     if (methods.empty()) {
         SPDLOG_WARN("Invalid SOCKS5 identification");
+        delete this; // disconnect
         return;
     }
 
-    char response[2];
-    response[0] = socks5::VERSION;
-    std::vector<uv_buf_t> bufs;
+    char outmethod = std::find(methods.begin(), methods.end(),
+                               static_cast<char>(socks5::methods::USER_PASS)) !=
+                             methods.end()
+                         ? static_cast<char>(socks5::methods::USER_PASS)
+                         : static_cast<char>(socks5::methods::NO_ACCEPTABLE);
 
-    if (std::find(methods.begin(), methods.end(),
-                  static_cast<unsigned char>(socks5::methods::USER_PASS)) !=
-        methods.end()) {
-        response[1] = static_cast<unsigned char>(socks5::methods::USER_PASS);
-        bufs.push_back({response, 2});
+    char response[2] = {socks5::VERSION, outmethod};
+    std::vector<uv_buf_t> bufs = {{response, sizeof(response)}};
 
+    if (outmethod == static_cast<char>(socks5::methods::USER_PASS))
         this->passed_state = socks5::state::IDENT;
-        this->write(bufs, false);
-        return;
-    }
 
-    SPDLOG_DEBUG("No acceptable auth methods");
-
-    response[1] = static_cast<unsigned char>(socks5::methods::NO_ACCEPTABLE);
-    bufs.push_back({response, 2});
-    this->write(bufs, true);
+    // we only accept user pass auth
+    this->write(bufs,
+                outmethod != static_cast<char>(socks5::methods::USER_PASS));
 }
 
 void ProxyClient::handle_stage_auth(const std::string_view &buf)
@@ -130,7 +128,7 @@ void ProxyClient::handle_stage_auth(const std::string_view &buf)
 
         std::vector<uv_buf_t> bufs;
         char response[2] = {socks5::SUBNEGOTIATION_VERSION, 0x01};
-        bufs.push_back({response, 2});
+        bufs.push_back({response, sizeof(response)});
 
         this->write(bufs, true);
         return;
@@ -153,7 +151,7 @@ void ProxyClient::handle_stage_request(const std::string_view &buf)
         char response[3] = {socks5::VERSION,
                             static_cast<char>(socks5::reply::GENERAL_FAILURE),
                             0x00};
-        bufs.push_back({response, 3});
+        bufs.push_back({response, sizeof(response)});
 
         this->write(bufs, true);
         return;
@@ -188,19 +186,20 @@ void ProxyClient::send_auth_response(const bool success)
     response[0] = socks5::SUBNEGOTIATION_VERSION;
     response[1] = success ? 0x00 : 0x01;
 
+    std::vector<uv_buf_t> bufs;
+    bufs.push_back({response, sizeof(response)});
+
     if (success)
         this->passed_state = socks5::state::AUTH;
 
-    std::vector<uv_buf_t> bufs;
-    bufs.push_back({response, 2});
     this->write(bufs, !success);
 }
 
 void ProxyClient::send_request_response(const socks5::reply status)
 {
-    char response[22] = {0};
+    char response[socks5::IPV6_REQ_LEN] = {0};
     response[0] = socks5::VERSION;
-    response[1] = static_cast<unsigned char>(status);
+    response[1] = static_cast<char>(status);
     response[2] = 0x00;
 
     std::vector<uv_buf_t> bufs;
@@ -213,8 +212,9 @@ void ProxyClient::send_request_response(const socks5::reply status)
     response[3] = this->is_ipv6 ? static_cast<char>(socks5::address_type::IPV6)
                                 : static_cast<char>(socks5::address_type::IPV4);
 
-    bufs.push_back(
-        {response, static_cast<std::size_t>(this->is_ipv6 ? 22 : 10)});
+    bufs.push_back({response, static_cast<std::size_t>(
+                                  this->is_ipv6 ? socks5::IPV6_REQ_LEN
+                                                : socks5::IPV4_REQ_LEN)});
 
     this->passed_state = socks5::state::REQUEST;
     this->write(bufs, false);

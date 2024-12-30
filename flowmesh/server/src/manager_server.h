@@ -9,6 +9,9 @@ class ManagerServer {
   public:
     ManagerServer(uv_loop_t *loop, const std::string_view &host,
                   const std::uint16_t port);
+
+  private:
+    uv_tcp_t *server;
 };
 
 #endif // MANAGER_SERVER_H

@@ -38,12 +38,19 @@ static void on_connection(uv_stream_t *server, int status)
 ProxyServer::ProxyServer(uv_loop_t *loop, const std::string_view &host,
                          const std::uint16_t port)
 {
-    uv_tcp_t *server = new uv_tcp_t;
-    uv_tcp_init(loop, server);
+    this->server = new uv_tcp_t;
+    uv_tcp_init(loop, this->server);
     sockaddr_in sin{};
     uv_ip4_addr(host.data(), port, &sin);
-    uv_tcp_bind(server, reinterpret_cast<const sockaddr *>(&sin), 0);
-    if (uv_listen(reinterpret_cast<uv_stream_t *>(server), SOMAXCONN,
+    uv_tcp_bind(this->server, reinterpret_cast<const sockaddr *>(&sin), 0);
+    if (uv_listen(reinterpret_cast<uv_stream_t *>(this->server), SOMAXCONN,
                   on_connection) != 0)
         throw std::runtime_error("Failed to listen on proxy server");
+}
+
+ProxyServer::~ProxyServer()
+{
+    uv_close(reinterpret_cast<uv_handle_t *>(this->server), [](uv_handle_t *handle){
+        delete handle;
+    });
 }

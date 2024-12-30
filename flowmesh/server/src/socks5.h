@@ -7,8 +7,16 @@
 #include <vector>
 
 namespace socks5 {
-static const int VERSION = 0x05;
-static const int SUBNEGOTIATION_VERSION = 0x01;
+constexpr static int VERSION = 0x05;
+constexpr static int SUBNEGOTIATION_VERSION = 0x01;
+
+constexpr static int IPV4_LEN = 4;
+constexpr static int IPV6_LEN = 16;
+
+constexpr static int IPV4_REQ_LEN =
+    IPV4_LEN + 6; // 4 bytes for address, 2 for port
+constexpr static int IPV6_REQ_LEN =
+    IPV6_LEN + 6; // 16 bytes for address, 2 for port
 
 enum class state {
     NONE = -1,
@@ -54,14 +62,16 @@ struct credentials {
 };
 
 struct raw_conn_address {
+    // `addr` might be 4 or 16 bytes in length, or might include a domain string
+    // if `is_domain` is true
     std::string_view addr;
     std::uint16_t netport;
     bool is_domain;
 };
 
-std::string_view parse_ident(std::string_view buf);
-std::optional<credentials> parse_auth(std::string_view buf);
-std::optional<raw_conn_address> parse_request(std::string_view buf);
+std::string_view parse_ident(const std::string_view &buf);
+std::optional<credentials> parse_auth(const std::string_view &buf);
+std::optional<raw_conn_address> parse_request(const std::string_view &buf);
 
 }; // namespace socks5
 

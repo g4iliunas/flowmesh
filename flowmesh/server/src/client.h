@@ -7,10 +7,10 @@ class Client {
   public:
     Client();
     ~Client();
-    uv_tcp_t *get_client() { return &this->client; }
+    uv_tcp_t *get_client() { return this->client; }
 
   private:
-    uv_tcp_t client;
+    uv_tcp_t *client;
 };
 
 #endif // CLIENT_H

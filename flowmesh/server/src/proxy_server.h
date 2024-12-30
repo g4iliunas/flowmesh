@@ -9,6 +9,10 @@ class ProxyServer {
   public:
     ProxyServer(uv_loop_t *loop, const std::string_view &host,
                 const std::uint16_t port);
+    ~ProxyServer();
+
+  private:
+    uv_tcp_t *server;
 };
 
 #endif // PROXY_SERVER_H
