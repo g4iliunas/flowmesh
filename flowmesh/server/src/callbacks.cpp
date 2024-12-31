@@ -3,6 +3,11 @@
 
 void ProxyClient::handle_auth(const socks5::credentials &creds)
 {
+    /*
+    request for a provider to manager server, find a provider that matches
+    credentials.
+    */
+
     this->send_auth_response(true);
 }
 

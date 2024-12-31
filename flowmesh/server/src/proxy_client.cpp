@@ -1,5 +1,6 @@
 #include "proxy_client.h"
 #include "client.h"
+#include "manager_server.h"
 #include "socks5.h"
 #include "utils.h"
 #include <algorithm>
@@ -7,9 +8,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-ProxyClient::ProxyClient()
+ProxyClient::ProxyClient(ManagerServer *manager)
     : Client(), passed_state(socks5::state::NONE), disconnect(false),
-      is_ipv6(false)
+      is_ipv6(false), manager(manager)
 {
     SPDLOG_DEBUG("Constructing a proxy client");
     this->get_client()->data = this;

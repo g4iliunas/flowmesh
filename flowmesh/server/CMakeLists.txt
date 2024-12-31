@@ -5,6 +5,7 @@ project(flowmesh_server)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBUV REQUIRED IMPORTED_TARGET libuv)
 find_package(spdlog REQUIRED)
+find_package(hiredis REQUIRED)
 
 add_executable(flowmesh_server main.cpp
     src/proxy_server.cpp
@@ -14,11 +15,14 @@ add_executable(flowmesh_server main.cpp
     src/utils.cpp
     src/socks5.cpp
     src/callbacks.cpp
+    src/database.cpp
+    src/provider.cpp
 )
 
 target_include_directories(flowmesh_server PRIVATE ${LIBUV_INCLUDE_DIRS})
 target_compile_options(flowmesh_server PRIVATE -Wall -Wextra -Wpedantic)
-target_link_libraries(flowmesh_server PRIVATE PkgConfig::LIBUV spdlog::spdlog) 
+target_link_libraries(flowmesh_server PRIVATE PkgConfig::LIBUV spdlog::spdlog hiredis::hiredis) 
+
 
 if (DEFINED TRACE)
     message("TRACE is enabled")

@@ -1,3 +1,4 @@
+#include "src/database.h"
 #include "src/manager_server.h"
 #include "src/proxy_server.h"
 #include <spdlog/spdlog.h>
@@ -23,8 +24,9 @@ int main(void)
     SPDLOG_TRACE("trace test");
     SPDLOG_DEBUG("debug test");
 
-    ProxyServer proxy_server(&loop, "127.0.0.1", 1080);
-    ManagerServer manager_server(&loop, "127.0.0.1", 1081);
+    Database database(&loop, "127.0.0.1", 6379);
+    ManagerServer manager_server(&loop, &database, "127.0.0.1", 1081);
+    ProxyServer proxy_server(&loop, &manager_server, "127.0.0.1", 1080);
 
     SPDLOG_INFO("Initialized both proxy and manager servers");
 

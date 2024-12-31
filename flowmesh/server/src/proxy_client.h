@@ -2,12 +2,13 @@
 #define PROXY_CLIENT_H
 
 #include "client.h"
+#include "manager_server.h"
 #include "socks5.h"
 #include <uv.h>
 
 class ProxyClient : public Client {
   public:
-    ProxyClient();
+    ProxyClient(ManagerServer *database);
     void read_start();
     void write(std::vector<uv_buf_t> &bufs, bool disconnect);
     bool is_disconnect() const { return this->disconnect; }
@@ -34,6 +35,9 @@ class ProxyClient : public Client {
 
     void send_auth_response(const bool success);
     void send_request_response(const socks5::reply status);
+
+  private:
+    ManagerServer *manager;
 };
 
 #endif // PROXY_CLIENT_H

@@ -1,4 +1,5 @@
 #include "proxy_server.h"
+#include "manager_server.h"
 #include "proxy_client.h"
 #include <spdlog/spdlog.h>
 #include <sys/socket.h> // somaxconn
@@ -15,7 +16,8 @@ static void on_connection(uv_stream_t *server, int status)
     ProxyClient *pclient{};
 
     try {
-        pclient = new ProxyClient;
+        pclient =
+            new ProxyClient(reinterpret_cast<ManagerServer *>(server->data));
     }
     catch (const std::exception &e) {
         SPDLOG_WARN("Failed to allocate memory for client: {}", e.what());
@@ -35,11 +37,12 @@ static void on_connection(uv_stream_t *server, int status)
     pclient->read_start();
 }
 
-ProxyServer::ProxyServer(uv_loop_t *loop, const std::string_view &host,
-                         const std::uint16_t port)
+ProxyServer::ProxyServer(uv_loop_t *loop, ManagerServer *manager,
+                         const std::string_view &host, const std::uint16_t port)
 {
     this->server = new uv_tcp_t;
     uv_tcp_init(loop, this->server);
+    this->server->data = manager;
     sockaddr_in sin{};
     uv_ip4_addr(host.data(), port, &sin);
     uv_tcp_bind(this->server, reinterpret_cast<const sockaddr *>(&sin), 0);
@@ -50,7 +53,6 @@ ProxyServer::ProxyServer(uv_loop_t *loop, const std::string_view &host,
 
 ProxyServer::~ProxyServer()
 {
-    uv_close(reinterpret_cast<uv_handle_t *>(this->server), [](uv_handle_t *handle){
-        delete handle;
-    });
+    uv_close(reinterpret_cast<uv_handle_t *>(this->server),
+             [](uv_handle_t *handle) { delete handle; });
 }
