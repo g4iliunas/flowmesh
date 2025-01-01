@@ -14,7 +14,7 @@ add_executable(flowmesh_server main.cpp
     src/proxy_client.cpp
     src/utils.cpp
     src/socks5.cpp
-    src/callbacks.cpp
+    src/consumer_callbacks.cpp
     src/database.cpp
     src/provider.cpp
 )
