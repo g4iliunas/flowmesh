@@ -1,4 +1,4 @@
-#include "proxy_client.h"
+#include "consumer.h"
 #include "client.h"
 #include "manager_server.h"
 #include "socks5.h"
@@ -7,15 +7,15 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-ProxyClient::ProxyClient(ManagerServer *manager)
-    : Client<ProxyClient>(), passed_state(socks5::state::NONE),
+Consumer::Consumer(ManagerServer *manager)
+    : Client<Consumer>(), passed_state(socks5::state::NONE),
       is_ipv6(false), manager(manager)
 {
     SPDLOG_DEBUG("Constructing a proxy client");
     this->get_client()->data = this;
 }
 
-void ProxyClient::handle_buf(const std::string_view buf)
+void Consumer::handle_buf(const std::string_view buf)
 {
     SPDLOG_DEBUG("Handling {} bytes", buf.length());
 
@@ -42,7 +42,7 @@ void ProxyClient::handle_buf(const std::string_view buf)
     }
 }
 
-void ProxyClient::handle_stage_ident(const std::string_view &buf)
+void Consumer::handle_stage_ident(const std::string_view &buf)
 {
     std::string_view methods = socks5::parse_ident(buf);
     SPDLOG_DEBUG("SOCKS5 client suggested {} methods", methods.length());
@@ -70,7 +70,7 @@ void ProxyClient::handle_stage_ident(const std::string_view &buf)
                 outmethod != static_cast<char>(socks5::methods::USER_PASS));
 }
 
-void ProxyClient::handle_stage_auth(const std::string_view &buf)
+void Consumer::handle_stage_auth(const std::string_view &buf)
 {
     std::optional<socks5::credentials> _creds = socks5::parse_auth(buf);
 
@@ -90,7 +90,7 @@ void ProxyClient::handle_stage_auth(const std::string_view &buf)
     this->handle_auth(creds);
 }
 
-void ProxyClient::handle_stage_request(const std::string_view &buf)
+void Consumer::handle_stage_request(const std::string_view &buf)
 {
     std::optional<socks5::raw_conn_address> conn_addr =
         socks5::parse_request(buf);
@@ -131,7 +131,7 @@ void ProxyClient::handle_stage_request(const std::string_view &buf)
     this->handle_request(raw_addr);
 }
 
-void ProxyClient::send_auth_response(const bool success)
+void Consumer::send_auth_response(const bool success)
 {
     char response[2];
     response[0] = socks5::SUBNEGOTIATION_VERSION;
@@ -146,7 +146,7 @@ void ProxyClient::send_auth_response(const bool success)
     this->write(bufs, !success);
 }
 
-void ProxyClient::send_request_response(const socks5::reply status)
+void Consumer::send_request_response(const socks5::reply status)
 {
     char response[socks5::IPV6_REQ_LEN] = {0};
     response[0] = socks5::VERSION;

@@ -1,14 +1,14 @@
-#ifndef PROXY_CLIENT_H
-#define PROXY_CLIENT_H
+#ifndef CONSUMER_H 
+#define CONSUMER_H 
 
 #include "client.h"
 #include "manager_server.h"
 #include "socks5.h"
 #include <uv.h>
 
-class ProxyClient : public Client<ProxyClient> {
+class Consumer : public Client<Consumer> {
   public:
-    ProxyClient(ManagerServer *database);
+    Consumer(ManagerServer *database);
     void handle_buf(const std::string_view buf);
 
   private:
@@ -34,4 +34,4 @@ class ProxyClient : public Client<ProxyClient> {
     ManagerServer *manager;
 };
 
-#endif // PROXY_CLIENT_H
+#endif // CONSUMER_H 

@@ -1,6 +1,6 @@
 #include "proxy_server.h"
+#include "consumer.h"
 #include "manager_server.h"
-#include "proxy_client.h"
 #include <spdlog/spdlog.h>
 #include <sys/socket.h> // somaxconn
 #include <uv.h>
@@ -13,28 +13,28 @@ static void on_connection(uv_stream_t *server, int status)
     }
 
     SPDLOG_INFO("Received a connection");
-    ProxyClient *pclient{};
+    Consumer *consumer{};
 
     try {
-        pclient =
-            new ProxyClient(reinterpret_cast<ManagerServer *>(server->data));
+        consumer =
+            new Consumer(reinterpret_cast<ManagerServer *>(server->data));
     }
     catch (const std::exception &e) {
         SPDLOG_WARN("Failed to allocate memory for client: {}", e.what());
         return;
     }
 
-    uv_tcp_t *client = pclient->get_client();
+    uv_tcp_t *client = consumer->get_client();
     uv_tcp_init(server->loop, client);
 
     if (uv_accept(server, reinterpret_cast<uv_stream_t *>(client)) != 0) {
         SPDLOG_ERROR("Failed to accept connection");
-        delete pclient;
+        delete consumer;
         return;
     }
 
     SPDLOG_DEBUG("Finished accepting the connection");
-    pclient->read_start();
+    consumer->read_start();
 }
 
 ProxyServer::ProxyServer(uv_loop_t *loop, ManagerServer *manager,

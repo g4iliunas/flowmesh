@@ -9,4 +9,4 @@ public:
     ~Provider();
 };
 
-#endif
+#endif // PROVIDER_H

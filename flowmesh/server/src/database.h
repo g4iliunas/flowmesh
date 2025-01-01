@@ -17,4 +17,4 @@ class Database {
     redisAsyncContext *redis_ctx;
 };
 
-#endif
+#endif // DATABASE_H

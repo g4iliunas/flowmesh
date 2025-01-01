@@ -75,4 +75,4 @@ std::optional<raw_conn_address> parse_request(const std::string_view &buf);
 
 }; // namespace socks5
 
-#endif
+#endif // SOCKS5_H
