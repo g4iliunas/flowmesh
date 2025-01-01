@@ -6,20 +6,14 @@
 #include "socks5.h"
 #include <uv.h>
 
-class ProxyClient : public Client {
+class ProxyClient : public Client<ProxyClient> {
   public:
     ProxyClient(ManagerServer *database);
-    void read_start();
-    void write(std::vector<uv_buf_t> &bufs, bool disconnect);
-    bool is_disconnect() const { return this->disconnect; }
+    void handle_buf(const std::string_view buf);
 
   private:
     socks5::state passed_state;
-    bool disconnect; // set to true when the client should be disconnected after
-                     // writing is done
     bool is_ipv6;
-
-    void handle_buf(const std::string_view buf);
 
     void handle_stage_ident(const std::string_view &buf);
     void handle_stage_auth(const std::string_view &buf);

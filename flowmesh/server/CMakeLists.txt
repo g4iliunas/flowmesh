@@ -10,7 +10,6 @@ find_package(hiredis REQUIRED)
 add_executable(flowmesh_server main.cpp
     src/proxy_server.cpp
     src/manager_server.cpp
-    src/client.cpp
     src/proxy_client.cpp
     src/utils.cpp
     src/socks5.cpp

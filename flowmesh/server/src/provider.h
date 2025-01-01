@@ -3,7 +3,7 @@
 
 #include "client.h"
 
-class Provider : Client {
+class Provider : Client<Provider> {
 public:
     Provider();
     ~Provider();

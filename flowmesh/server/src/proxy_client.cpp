@@ -2,67 +2,17 @@
 #include "client.h"
 #include "manager_server.h"
 #include "socks5.h"
-#include "utils.h"
 #include <algorithm>
 #include <arpa/inet.h>
 #include <cstring>
 #include <spdlog/spdlog.h>
 
 ProxyClient::ProxyClient(ManagerServer *manager)
-    : Client(), passed_state(socks5::state::NONE), disconnect(false),
+    : Client<ProxyClient>(), passed_state(socks5::state::NONE),
       is_ipv6(false), manager(manager)
 {
     SPDLOG_DEBUG("Constructing a proxy client");
     this->get_client()->data = this;
-}
-
-void ProxyClient::read_start()
-{
-    uv_read_start(
-        reinterpret_cast<uv_stream_t *>(this->get_client()), alloc_buf,
-        [](uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
-            auto *pclient = reinterpret_cast<ProxyClient *>(stream->data);
-            if (nread < 0) {
-                if (nread != UV_EOF)
-                    SPDLOG_WARN("Read error: {}", uv_strerror(nread));
-                else
-                    SPDLOG_DEBUG("Client disconnected");
-
-                delete pclient;
-
-                if (buf->base != nullptr)
-                    delete[] buf->base;
-                return;
-            }
-
-            SPDLOG_DEBUG("Read {} bytes", nread);
-            pclient->handle_buf(std::string_view(buf->base, nread));
-            delete[] buf->base;
-        });
-}
-
-void ProxyClient::write(std::vector<uv_buf_t> &bufs, bool disconnect)
-{
-    this->disconnect = disconnect;
-    uv_write_t *req = new uv_write_t;
-    uv_write(
-        req, reinterpret_cast<uv_stream_t *>(this->get_client()), bufs.data(),
-        bufs.size(), [](uv_write_t *req, int status) {
-            auto *pclient = reinterpret_cast<ProxyClient *>(req->handle->data);
-            delete req;
-
-            if (status < 0) {
-                SPDLOG_ERROR("Write error: {}", uv_strerror(status));
-                delete pclient;
-                return;
-            }
-
-            if (pclient->is_disconnect()) {
-                SPDLOG_DEBUG("Disconnecting client because the flag was set");
-                delete pclient;
-                return;
-            }
-        });
 }
 
 void ProxyClient::handle_buf(const std::string_view buf)
