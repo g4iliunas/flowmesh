@@ -10,6 +10,7 @@ class ManagerServer {
   public:
     ManagerServer(uv_loop_t *loop, Database *database,
                   const std::string_view &host, const std::uint16_t port);
+    Database *get_database() { return this->database; }
 
   private:
     uv_tcp_t *server;

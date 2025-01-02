@@ -1,5 +1,5 @@
-#ifndef CONSUMER_H 
-#define CONSUMER_H 
+#ifndef CONSUMER_H
+#define CONSUMER_H
 
 #include "client.h"
 #include "manager_server.h"
@@ -8,8 +8,9 @@
 
 class Consumer : public Client<Consumer> {
   public:
-    Consumer(ManagerServer *database);
+    Consumer(ManagerServer *manager_server);
     void handle_buf(const std::string_view buf);
+    ManagerServer *get_manager() { return this->manager_server; }
 
   private:
     socks5::state passed_state;
@@ -31,7 +32,7 @@ class Consumer : public Client<Consumer> {
     void send_request_response(const socks5::reply status);
 
   private:
-    ManagerServer *manager;
+    ManagerServer *manager_server;
 };
 
-#endif // CONSUMER_H 
+#endif // CONSUMER_H

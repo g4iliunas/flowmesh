@@ -7,9 +7,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-Consumer::Consumer(ManagerServer *manager)
+Consumer::Consumer(ManagerServer *manager_server)
     : Client<Consumer>(), passed_state(socks5::state::NONE),
-      is_ipv6(false), manager(manager)
+      is_ipv6(false), manager_server(manager_server)
 {
     SPDLOG_DEBUG("Constructing a proxy client");
     this->get_client()->data = this;
