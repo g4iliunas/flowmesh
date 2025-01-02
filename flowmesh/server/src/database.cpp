@@ -52,7 +52,7 @@ static void get_hashmap_cb(redisAsyncContext *c, void *r, void *privdata)
     Database::HashMap hashmap{};
     if (!reply) {
         SPDLOG_WARN("Couldnt fetch the result from the db");
-        q->callback(hashmap, std::any());
+        q->callback(hashmap, q->args);
         return;
     }
 

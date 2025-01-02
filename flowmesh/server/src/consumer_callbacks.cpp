@@ -4,7 +4,11 @@
 #include <fmt/ranges.h>
 #include <memory>
 #include <spdlog/spdlog.h>
-#include <utility>
+
+struct AuthQuery {
+    std::string password;
+    Consumer *consumer;
+};
 
 void Consumer::handle_auth(const socks5::credentials &creds)
 {
@@ -16,21 +20,22 @@ void Consumer::handle_auth(const socks5::credentials &creds)
     this->get_manager()->get_database()->get_provider(
         creds.username,
         [](Database::HashMap &hashmap, std::any args) {
-            auto pptr = std::unique_ptr<std::pair<std::string, Consumer *>>(
-                std::any_cast<std::pair<std::string, Consumer *> *>(args));
+            auto q =
+                std::unique_ptr<AuthQuery>(std::any_cast<AuthQuery *>(args));
 
             if (hashmap.empty()) {
                 SPDLOG_DEBUG("Database result is empty");
                 return;
             }
 
-            SPDLOG_DEBUG("Queried for: pw:{}; Result: {}", p->first, hashmap);
-            socks5::reply rep = pptr->first == hashmap["proxy_password"]
+            SPDLOG_DEBUG("*** Query: pw:{}; result:{}", p->first, hashmap);
+
+            socks5::reply rep = q->password == hashmap["proxy_password"]
                                     ? socks5::reply::SUCCEEDED
                                     : socks5::reply::GENERAL_FAILURE;
-            pptr->second->send_request_response(rep);
+            q->consumer->send_request_response(rep);
         },
-        new std::pair<std::string, Consumer *>(creds.password, this));
+        new AuthQuery{std::string(creds.password), this});
 }
 
 void Consumer::handle_request(const socks5::raw_conn_address &raw_addr)
