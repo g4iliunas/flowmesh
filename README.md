@@ -23,6 +23,7 @@ Ensure you have the following dependencies installed:
 
 - [libuv](https://github.com/libuv/libuv)
 - [CMake](https://cmake.org/)
+- [hiredis](https://github.com/redis/hiredis)
 
 ### Instructions
 
