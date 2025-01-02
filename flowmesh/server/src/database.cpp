@@ -1,10 +1,10 @@
 #include "database.h"
 #include <hiredis/adapters/libuv.h>
 #include <hiredis/async.h>
-#include <optional>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <string>
+#include <memory>
 
 static void on_connect(const redisAsyncContext *c, int status)
 {
@@ -46,28 +46,24 @@ static void get_hashmap_cb(redisAsyncContext *c, void *r, void *privdata)
     if (!privdata)
         return;
 
-    Database::Query *q = reinterpret_cast<Database::Query *>(privdata);
+    auto q = std::unique_ptr<Database::Query>(reinterpret_cast<Database::Query *>(privdata));
     redisReply *reply = reinterpret_cast<redisReply *>(r);
 
     Database::HashMap hashmap{};
     if (!reply) {
         SPDLOG_WARN("Couldnt fetch the result from the db");
         q->callback(hashmap, std::any());
-        delete q;
         return;
     }
 
     // why would we waste cpu clocks when result isnt needed?
-    if (!q->callback) {
-        delete q;
+    if (!q->callback)
         return;
-    }
 
     for (std::size_t i = 0; i < reply->elements; i += 2)
         hashmap[reply->element[i]->str] = reply->element[i + 1]->str;
 
     q->callback(hashmap, q->args);
-    delete q;
 }
 
 void Database::get_provider(const std::string_view &proxy_username,
