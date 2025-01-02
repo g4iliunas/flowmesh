@@ -13,8 +13,7 @@ struct AuthQuery {
 void Consumer::handle_auth(const socks5::credentials &creds)
 {
     /*
-    request for a provider to manager server, find a provider that matches
-    credentials.
+    validate auth
     */
 
     this->get_manager()->get_database()->get_provider(
@@ -40,6 +39,9 @@ void Consumer::handle_auth(const socks5::credentials &creds)
 
 void Consumer::handle_request(const socks5::raw_conn_address &raw_addr)
 {
+    /*
+     * if there is not a provider assigned, find it in manager server
+     */
     this->send_request_response(socks5::reply::SUCCEEDED);
 }
 
