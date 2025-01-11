@@ -27,7 +27,7 @@ void Consumer::handle_auth(const socks5::credentials &creds)
                 return;
             }
 
-            SPDLOG_DEBUG("*** Query: pw:{}; result:{}", p->first, hashmap);
+            SPDLOG_DEBUG("*** Query: pw:{}; result:{}", q->password, hashmap);
 
             socks5::reply rep = q->password == hashmap["proxy_password"]
                                     ? socks5::reply::SUCCEEDED
